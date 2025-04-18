@@ -79,7 +79,7 @@ class NodeApi implements ProxyApi {
     }
     
     function ethCall(string $to, string $data, string $tag = 'latest'): string {
-        return $this->send('eth_call', ['to' => $to, 'data' => Utils::toHex($data, true), 'tag' => $tag]);
+        return $this->send('eth_call', ['to' => $to, 'data' => $data, 'tag' => $tag]);
     }
     
     function blockNumber() {

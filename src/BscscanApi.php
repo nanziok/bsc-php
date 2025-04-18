@@ -99,7 +99,7 @@ class BscscanApi implements ProxyApi {
     function ethCall(string $to, string $data, string $tag = 'latest'): string {
         return $this->send('eth_call', [
             'to'   => $to,
-            'data' => Utils::toHex($data, true),
+            'data' => $data,
             'tag'  => 'latest'
         ]);
     }
