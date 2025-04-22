@@ -368,12 +368,15 @@ class Utils
         } elseif (is_int($number)) {
             $bn = new BigInteger($number);
         } elseif (is_numeric($number)) {
-            $number = (string) $number;
+            $number = strtolower((string) $number);
 
             if (self::isNegative($number)) {
                 $count = 1;
                 $number = str_replace('-', '', $number, $count);
                 $negative1 = new BigInteger(-1);
+            }
+            if (strpos($number, 'e') > 0){
+                $number = sprintf("%.18f", $number);
             }
             if (strpos($number, '.') > 0) {
                 $comps = explode('.', $number);
