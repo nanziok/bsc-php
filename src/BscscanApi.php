@@ -35,7 +35,7 @@ class BscscanApi implements ProxyApi {
         }
         
         $res = Utils::httpRequest('GET', $url);
-        if (isset($res['result'])) {
+        if (array_key_exists('result', $res)) {
             return $res['result'];
         } else {
             return false;

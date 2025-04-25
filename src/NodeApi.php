@@ -37,7 +37,7 @@ class NodeApi implements ProxyApi {
         }
         
         $res = Utils::httpRequest('POST', $url, $data);
-        if (isset($res['result'])) {
+        if (array_key_exists('result', $res)) {
             return $res['result'];
         } else {
             return false;
