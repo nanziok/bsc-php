@@ -7,6 +7,10 @@ class NodeApi implements ProxyApi {
     protected $user;
     protected $password;
     protected $network;
+    /**
+     * @var callable
+     */
+    protected $errorHandler;
     
     function __construct(string $server, string $user = null, string $password = null, string $network = 'mainnet') {
         $this->server   = $server;
@@ -37,6 +41,18 @@ class NodeApi implements ProxyApi {
         }
         
         $res = Utils::httpRequest('POST', $url, $data);
+        if (array_key_exists('error', $res)) {
+            $error = match ($res['error']["code"]) {
+                "-32600", "-32602" => self::ERROR_BAD_REQUEST,
+                "-32601"           => self::ERROR_NOT_FOUND,
+                "-32005"           => self::ERROR_RATE_LIMITED,
+                default            => self::ERROR_UNKNOWN,
+            };
+            $message = $res['error']["message"];
+        }
+        if (isset($error) && is_callable($this->errorHandler)) {
+            call_user_func_array($this->errorHandler, [$error, $message ?? '']);
+        }
         if (array_key_exists('result', $res)) {
             return $res['result'];
         } else {
@@ -111,5 +127,9 @@ class NodeApi implements ProxyApi {
             "gas"      => Utils::toHex($gas, true),
             "gasPrice" => Utils::toHex($gasPrice, true),
         ]);
+    }
+    
+    function errorHandle(callable $fn) {
+        $this->errorHandler = $fn;
     }
 }

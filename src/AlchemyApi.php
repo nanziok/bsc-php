@@ -5,6 +5,10 @@ namespace Binance;
 class AlchemyApi implements ProxyApi {
     protected $apiKey;
     protected $network;
+    /**
+     * @var callable
+     */
+    protected $errorHandler;
     
     function __construct(string $apiKey, $network = "mainnet") {
         $this->apiKey  = $apiKey;
@@ -24,6 +28,18 @@ class AlchemyApi implements ProxyApi {
         $res = Utils::httpRequest('POST', $url, [
             'json' => $data
         ]);
+        if (array_key_exists('error', $res)) {
+            $error = match ($res['error']["code"]) {
+                "-32600", "-32602" => self::ERROR_BAD_REQUEST,
+                "-32601"           => self::ERROR_NOT_FOUND,
+                "-32005"           => self::ERROR_RATE_LIMITED,
+                default            => self::ERROR_UNKNOWN,
+            };
+            $message = $res['error']["message"];
+        }
+        if (isset($error) && is_callable($this->errorHandler)) {
+            call_user_func_array($this->errorHandler, [$error, $message ?? '']);
+        }
         if (array_key_exists('result', $res)) {
             return $res['result'];
         } else {
@@ -124,5 +140,9 @@ class AlchemyApi implements ProxyApi {
                 "latest"
             ]
         );
+    }
+    
+    function errorHandle(callable $fn) {
+        $this->errorHandler = $fn;
     }
 }

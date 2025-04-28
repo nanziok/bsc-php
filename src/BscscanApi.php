@@ -5,6 +5,7 @@ namespace Binance;
 class BscscanApi implements ProxyApi {
     protected $apiKey;
     protected $network;
+    protected $errorHandler = null;
     
     function __construct(string $apiKey, $network = 'mainnet') {
         $this->apiKey  = $apiKey;
@@ -33,11 +34,32 @@ class BscscanApi implements ProxyApi {
             $strParams = http_build_query($params);
             $url       .= "&{$strParams}";
         }
-        
         $res = Utils::httpRequest('GET', $url);
+        if (array_key_exists('status', $res) && $res['status'] == '0') {
+            if (is_string($res['result'])) {
+                if (str_contains($res['result'], 'rate')) {
+                    $error = self::ERROR_RATE_LIMITED;
+                }else{
+                    $error = self::ERROR_UNKNOWN;
+                }
+                $message = $res['result'];
+            }
+        } elseif (array_key_exists('error', $res)) {
+            $error = match ($res['error']["code"]) {
+                "-32600", "-32602" => self::ERROR_BAD_REQUEST,
+                "-32601"           => self::ERROR_NOT_FOUND,
+                "-32005"           => self::ERROR_RATE_LIMITED,
+                default            => self::ERROR_UNKNOWN,
+            };
+            $message = $res['error']["message"];
+        }
+        if (isset($error) && is_callable($this->errorHandler)) {
+            call_user_func_array($this->errorHandler, [$error, $message ?? '']);
+        }
         if (array_key_exists('result', $res)) {
             return $res['result'];
         } else {
+            
             return false;
         }
     }
@@ -133,5 +155,9 @@ class BscscanApi implements ProxyApi {
             "gas"      => Utils::toHex($gas, true),
             "gasPrice" => Utils::toHex($gasPrice, true),
         ]);
+    }
+    
+    function errorHandle(callable $fn) {
+        $this->errorHandler = $fn;
     }
 }
