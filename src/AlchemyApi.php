@@ -23,7 +23,7 @@ class AlchemyApi implements ProxyApi {
             "params"  => $params,
         ];
         
-        $url = "https://bnb.-{$this->network}.g.alchemy.com/v2/{$this->apiKey}";
+        $url = "https://bnb-{$this->network}.g.alchemy.com/v2/{$this->apiKey}";
         
         $res = Utils::httpRequest('POST', $url, [
             'json' => $data
