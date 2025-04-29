@@ -2,53 +2,53 @@
 
 namespace Binance;
 
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\GuzzleException;
+
 class NodeApi implements ProxyApi {
-    protected $server;
-    protected $user;
-    protected $password;
+    protected $gateway;
+    protected $options;
     protected $network;
     /**
      * @var callable
      */
     protected $errorHandler;
     
-    function __construct(string $server, string $user = null, string $password = null, string $network = 'mainnet') {
-        $this->server   = $server;
-        $this->user     = $user;
-        $this->password = $password;
-        $this->network  = $network;
+    function __construct(string $gateway, string $network = 'mainnet', array $options = []) {
+        $this->gateway = $gateway;
+        $this->network = $network;
+        $this->options = $options;
     }
     
-    public function send($method, $params = []) {
-        $url = $this->server;
-        
+    public function send($method, $params = [], $req_id = 1) {
         $strParams   = json_encode(array_values($params));
         $data_string = <<<data
-            {"jsonrpc":"2.0","method":"{$method}","params": $strParams,"id":1}
+            {"jsonrpc":"2.0","method":"{$method}","params": $strParams,"id":$req_id}
             data;
         
-        $data = [
-            'headers' => [
-                'Content-Type' => 'application/json',
-            ],
-            'body'    => $data_string
-        ];
-        if ($this->user && $this->password) {
-            $data['auth'] = [
-                $this->user,
-                $this->password
-            ];
+        $this->options["body"] = $data_string;
+        if (!isset($this->options["headers"])) {
+            $this->options["headers"] = [];
         }
-        
-        $res = Utils::httpRequest('POST', $url, $data);
-        if (array_key_exists('error', $res)) {
-            $error = match ($res['error']["code"]) {
-                "-32600", "-32602" => self::ERROR_BAD_REQUEST,
-                "-32601"           => self::ERROR_NOT_FOUND,
-                "-32005"           => self::ERROR_RATE_LIMITED,
-                default            => self::ERROR_UNKNOWN,
-            };
-            $message = $res['error']["message"];
+        $this->options["headers"]["Content-Type"] = "application/json";
+        try {
+            $res = Utils::httpRequest('POST', $this->gateway, $this->options);
+            if (array_key_exists('error', $res)) {
+                $error   = match ($res['error']["code"]) {
+                    "-32600", "-32602" => self::ERROR_BAD_REQUEST,
+                    "-32601"           => self::ERROR_NOT_FOUND,
+                    "-32005"           => self::ERROR_RATE_LIMITED,
+                    default            => self::ERROR_UNKNOWN,
+                };
+                $message = $res['error']["message"];
+            }
+            if (isset($error) && is_callable($this->errorHandler)) {
+                call_user_func_array($this->errorHandler, [$error, $message ?? '']);
+            }
+        } catch (ConnectException $e) {
+            $res = [];
+            $error   = self::ERROR_UNKNOWN;
+            $message = "网络请求失败";
         }
         if (isset($error) && is_callable($this->errorHandler)) {
             call_user_func_array($this->errorHandler, [$error, $message ?? '']);
@@ -65,7 +65,7 @@ class NodeApi implements ProxyApi {
     }
     
     function bnbBalance(string $address, int $decimals = 18) {
-        $balance = $this->send('eth_getBalance', ['address' => $address, 'latest']);
+        $balance = $this->send('eth_getBalance', ['address' => $address, 'block' => 'latest']);
         return Utils::toDisplayAmount($balance, $decimals);
     }
     
@@ -79,7 +79,7 @@ class NodeApi implements ProxyApi {
     }
     
     function getNonce(string $address) {
-        return $this->send('eth_getTransactionCount', ['address' => $address, 'latest']);
+        return $this->send('eth_getTransactionCount', ['address' => $address, 'block' => 'latest']);
     }
     
     function getTransactionReceipt(string $txHash) {
@@ -95,7 +95,7 @@ class NodeApi implements ProxyApi {
     }
     
     function ethCall(string $to, string $data, string $tag = 'latest'): string {
-        return $this->send('eth_call', ['to' => $to, 'data' => $data, 'tag' => $tag]);
+        return $this->send('eth_call', [['to' => $to, 'data' => $data, 'tag' => $tag]]);
     }
     
     function blockNumber() {
@@ -104,28 +104,30 @@ class NodeApi implements ProxyApi {
     
     function getBlockByNumber(int $blockNumber) {
         $blockNumber = Utils::toHex($blockNumber, true);
-        return $this->send('eth_getBlockByNumber', ['tag' => $blockNumber, true]);
+        return $this->send('eth_getBlockByNumber', ['block' => $blockNumber, 'is_rich' => true]);
     }
     
     function getBlockTransactionCountByNumber(int $blockNumber) {
         $blockNumber = Utils::toHex($blockNumber, true);
-        return $this->send('eth_getBlockTransactionCountByNumber', ['tag' => $blockNumber, true]);
+        return $this->send('eth_getBlockTransactionCountByNumber', ['block' => $blockNumber]);
     }
     
     function getTransactionByBlockNumberAndIndex(int $blockNumber, int $index) {
         return $this->send('eth_getTransactionByBlockNumberAndIndex', [
-            'tag'   => Utils::toHex($blockNumber, true),
+            'block' => Utils::toHex($blockNumber, true),
             'index' => Utils::toHex($index, true)
         ]);
     }
     
     function estimateGas(string $data, string $to, int $value, int $gas, int $gasPrice) {
         return $this->send('eth_estimateGas', [
-            "data"     => $data,
-            "to"       => $to,
-            "value"    => Utils::toHex($value, true),
-            "gas"      => Utils::toHex($gas, true),
-            "gasPrice" => Utils::toHex($gasPrice, true),
+            [
+                "data"     => $data,
+                "to"       => $to,
+                "value"    => Utils::toHex($value, true),
+                "gas"      => Utils::toHex($gas, true),
+                "gasPrice" => Utils::toHex($gasPrice, true),
+            ]
         ]);
     }
     
