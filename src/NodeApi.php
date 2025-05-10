@@ -56,6 +56,7 @@ class NodeApi implements ProxyApi {
                 $message = <<<TEXT
 URL: {$this->gateway}
 BODY: {$this->options["body"]}
+RESPONSE: {$res["error"]["message"]}
 TEXT;
 ;
             }
