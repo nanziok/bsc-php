@@ -24,14 +24,14 @@ class NodeApi implements ProxyApi {
         if (function_exists("array_is_list")) {
             if (array_is_list($params)) {
                 $strParams = json_encode($params);
-            }else{
+            } else {
                 $strParams = json_encode(array_values($params));
             }
-        }else{
+        } else {
             $values = array_values($params);
             if ($values === $params) {
                 $strParams = json_encode($params);
-            }else{
+            } else {
                 $strParams = json_encode(array_values($params));
             }
         }
@@ -54,17 +54,16 @@ class NodeApi implements ProxyApi {
                     default            => self::ERROR_UNKNOWN,
                 };
                 $message = <<<TEXT
-URL: {$this->gateway}
-BODY: {$this->options["body"]}
-RESPONSE: {$res["error"]["message"]}
-TEXT;
-;
+                    URL: {$this->gateway}
+                    BODY: {$this->options["body"]}
+                    RESPONSE: {$res["error"]["message"]}
+                    TEXT;;
             }
             if (isset($error) && is_callable($this->errorHandler)) {
                 call_user_func_array($this->errorHandler, [$error, $message ?? '']);
             }
         } catch (ConnectException $e) {
-            $res = [];
+            $res     = [];
             $error   = self::ERROR_UNKNOWN;
             $message = "网络请求失败";
         }
@@ -112,8 +111,8 @@ TEXT;
         return $this->network;
     }
     
-    function ethCall(string $to, string $data, string $tag = 'latest'): string {
-        return $this->send('eth_call', [['to' => $to, 'data' => $data, 'tag' => $tag]]);
+    function ethCall(string $from, string $to, string $data, string $tag = 'latest'): string {
+        return $this->send('eth_call', [['from' => $from, 'to' => $to, 'data' => $data, 'tag' => $tag]]);
     }
     
     function blockNumber() {

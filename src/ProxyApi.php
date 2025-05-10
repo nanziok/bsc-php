@@ -35,7 +35,7 @@ interface ProxyApi {
     
     function getNonce(string $address);
     
-    function ethCall(string $to, string $data, string $tag = 'latest');
+    function ethCall(string $from, string $to, string $data, string $tag = 'latest');
     
     function blockNumber();
     

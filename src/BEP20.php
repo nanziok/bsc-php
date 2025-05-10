@@ -27,13 +27,13 @@ class BEP20 extends Bnb {
         $this->decimals        = $config['decimals'];
     }
     
-    public function balance(string $address) {
+    public function balance(string $address, string $from) {
         $method        = 'balanceOf(address)';
         $formatMethod  = Formatter::toMethodFormat($method);
         $formatAddress = Formatter::toAddressFormat($address);
         
         $data = "0x{$formatMethod}{$formatAddress}";
-        $balance = $this->proxyApi->ethCall($this->contractAddress, $data);
+        $balance = $this->proxyApi->ethCall($from,$this->contractAddress, $data);
         return Utils::toDisplayAmount($balance, $this->decimals);
     }
     
