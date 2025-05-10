@@ -21,7 +21,20 @@ class NodeApi implements ProxyApi {
     }
     
     public function send($method, $params = [], $req_id = 1) {
-        $strParams   = json_encode(array_values($params));
+        if (function_exists("array_is_list")) {
+            if (array_is_list($params)) {
+                $strParams = json_encode($params);
+            }else{
+                $strParams = json_encode(array_values($params));
+            }
+        }else{
+            $values = array_values($params);
+            if ($values === $params) {
+                $strParams = json_encode($params);
+            }else{
+                $strParams = json_encode(array_values($params));
+            }
+        }
         $data_string = <<<data
             {"jsonrpc":"2.0","method":"{$method}","params": $strParams,"id":$req_id}
             data;
