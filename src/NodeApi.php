@@ -53,7 +53,11 @@ class NodeApi implements ProxyApi {
                     "-32005"           => self::ERROR_RATE_LIMITED,
                     default            => self::ERROR_UNKNOWN,
                 };
-                $message = $res['error']["message"];
+                $message = <<<TEXT
+URL: {$this->gateway}
+BODY: {$this->options["body"]}
+TEXT;
+;
             }
             if (isset($error) && is_callable($this->errorHandler)) {
                 call_user_func_array($this->errorHandler, [$error, $message ?? '']);
