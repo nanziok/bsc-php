@@ -21,20 +21,7 @@ class NodeApi implements ProxyApi {
     }
     
     public function send($method, $params = [], $req_id = 1) {
-        if (function_exists("array_is_list")) {
-            if (array_is_list($params)) {
-                $strParams = json_encode($params);
-            } else {
-                $strParams = json_encode(array_values($params));
-            }
-        } else {
-            $values = array_values($params);
-            if ($values === $params) {
-                $strParams = json_encode($params);
-            } else {
-                $strParams = json_encode(array_values($params));
-            }
-        }
+        $strParams = json_encode(array_values($params));
         $data_string = <<<data
             {"jsonrpc":"2.0","method":"{$method}","params": $strParams,"id":$req_id}
             data;
@@ -112,7 +99,10 @@ class NodeApi implements ProxyApi {
     }
     
     function ethCall(string $from, string $to, string $data, string $tag = 'latest'): string {
-        return $this->send('eth_call', [['from' => $from, 'to' => $to, 'data' => $data, 'tag' => $tag]]);
+        return $this->send('eth_call', [
+            "params" => ['from' => $from, 'to' => $to, 'data' => $data],
+            "tag"    => $tag
+        ]);
     }
     
     function blockNumber() {
@@ -138,7 +128,7 @@ class NodeApi implements ProxyApi {
     
     function estimateGas(string $data, string $to, int $value, int $gas, int $gasPrice) {
         return $this->send('eth_estimateGas', [
-            [
+            "params" => [
                 "data"     => $data,
                 "to"       => $to,
                 "value"    => Utils::toHex($value, true),
