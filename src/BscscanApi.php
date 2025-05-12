@@ -56,7 +56,10 @@ class BscscanApi implements ProxyApi {
                     "-32005"           => self::ERROR_RATE_LIMITED,
                     default            => self::ERROR_UNKNOWN,
                 };
-                $message = $res['error']["message"];
+                $message = <<<TEXT
+                    URL: {$url}
+                    RESPONSE: {$res["error"]["message"]}
+                    TEXT;
             }
         } catch (ConnectException $e) {
             $res = [];

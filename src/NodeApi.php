@@ -44,7 +44,7 @@ class NodeApi implements ProxyApi {
                     URL: {$this->gateway}
                     BODY: {$this->options["body"]}
                     RESPONSE: {$res["error"]["message"]}
-                    TEXT;;
+                    TEXT;
             }
             if (isset($error) && is_callable($this->errorHandler)) {
                 call_user_func_array($this->errorHandler, [$error, $message ?? '']);
