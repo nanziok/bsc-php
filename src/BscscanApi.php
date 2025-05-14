@@ -94,7 +94,7 @@ class BscscanApi implements ProxyApi {
         }
     }
     
-    function receiptStatus(string $txHash): ?bool {
+    function receiptStatus(string $txHash) {
         $res = $this->send('eth_getTransactionByHash', ['txhash' => $txHash]);
         if (!$res) {
             return false;
@@ -108,6 +108,9 @@ class BscscanApi implements ProxyApi {
         $params['txhash'] = $txHash;
         
         $res = $this->send('gettxreceiptstatus', $params);
+        if (!$res) {
+            return null;
+        }
         return $res['status'] == '1';
     }
     

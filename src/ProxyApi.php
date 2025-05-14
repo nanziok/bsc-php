@@ -25,7 +25,7 @@ interface ProxyApi {
     
     function bnbBalance(string $address);
     
-    function receiptStatus(string $txHash): ?bool;
+    function receiptStatus(string $txHash);
     
     function getTransactionReceipt(string $txHash);
     

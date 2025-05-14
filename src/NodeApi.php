@@ -73,9 +73,12 @@ class NodeApi implements ProxyApi {
         return Utils::toDisplayAmount($balance, $decimals);
     }
     
-    function receiptStatus(string $txHash): bool {
+    function receiptStatus(string $txHash) {
         $res = $this->send('eth_getTransactionReceipt', ['txHash' => $txHash]);
-        return hexdec($res['status']) ? true : false;
+        if (empty($res)) {
+            return null;
+        }
+        return hexdec($res['status']) == 1;
     }
     
     function sendRawTransaction($raw) {
