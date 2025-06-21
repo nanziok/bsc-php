@@ -28,7 +28,7 @@ class EtherscanApi implements ProxyApi {
             }
         }
         
-        $url = "https://api.bscscan.com/v2/api?chainid={$this->chainId}&action={$method}&apikey={$this->apiKey}";
+        $url = "https://api.etherscan.io/v2/api?chainid={$this->chainId}&action={$method}&apikey={$this->apiKey}";
         if ($params && count($params) > 0) {
             $strParams = http_build_query($params);
             $url       .= "&{$strParams}";
