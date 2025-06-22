@@ -4,6 +4,7 @@ namespace Binance;
 
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 
 class NodeApi implements ProxyApi {
     protected $gateway;
@@ -17,7 +18,9 @@ class NodeApi implements ProxyApi {
     function __construct(string $gateway, string $network = 'mainnet', array $options = []) {
         $this->gateway = $gateway;
         $this->network = $network;
-        $this->options = $options;
+        $this->options = array_merge([
+            "http_errors" => false,
+        ], $options);
     }
     
     public function send($method, $params = [], $req_id = 1) {
@@ -53,6 +56,14 @@ class NodeApi implements ProxyApi {
             $res     = [];
             $error   = self::ERROR_UNKNOWN;
             $message = "网络请求失败";
+        }catch (RequestException $e){
+            $res     = [];
+            $error   = self::ERROR_RATE_LIMITED;
+            if ($e->hasResponse()) {
+                $message = "网络请求失败: http-code:【{$e->getResponse()->getStatusCode()}】，" . $e->getMessage();
+            }else{
+                $message = "网络请求失败: " . $e->getMessage();
+            }
         }
         if (isset($error) && is_callable($this->errorHandler)) {
             call_user_func_array($this->errorHandler, [$error, $message ?? '']);
