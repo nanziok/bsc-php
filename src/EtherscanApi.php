@@ -126,7 +126,7 @@ class EtherscanApi implements ProxyApi {
     }
     
     function getNetwork(): string {
-        return $this->network;
+        return 'mainnet';
     }
     
     function ethCall(string $from, string $to, string $data, string $tag = 'latest'): string {
