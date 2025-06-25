@@ -35,7 +35,10 @@ class EtherscanApi implements ProxyApi {
         }
         try {
             $res = Utils::httpRequest('GET', $url, $this->options);
-            if (array_key_exists('status', $res) && $res['status'] == '0') {
+            if (!is_array($res)){
+                $error = self::ERROR_UNKNOWN;
+                $message = "接口返回错误：" . var_export($res, true);
+            }else if (array_key_exists('status', $res) && $res['status'] == '0') {
                 if (is_string($res['result'])) {
                     if (str_contains($res['result'], 'rate')) {
                         $error = self::ERROR_RATE_LIMITED;
@@ -65,7 +68,7 @@ class EtherscanApi implements ProxyApi {
         if (isset($error) && is_callable($this->errorHandler)) {
             call_user_func_array($this->errorHandler, [$error, $message ?? '']);
         }
-        if (array_key_exists('result', $res)) {
+        if (is_array($res) && array_key_exists('result', $res)) {
             return $res['result'];
         } else {
             return false;

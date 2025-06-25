@@ -24,7 +24,7 @@ class NodeApi implements ProxyApi {
     }
     
     public function send($method, $params = [], $req_id = 1) {
-        $strParams = json_encode(array_values($params));
+        $strParams   = json_encode(array_values($params));
         $data_string = <<<data
             {"jsonrpc":"2.0","method":"{$method}","params": $strParams,"id":$req_id}
             data;
@@ -36,7 +36,10 @@ class NodeApi implements ProxyApi {
         $this->options["headers"]["Content-Type"] = "application/json";
         try {
             $res = Utils::httpRequest('POST', $this->gateway, $this->options);
-            if (array_key_exists('error', $res)) {
+            if (!is_array($res)){
+                $error = self::ERROR_UNKNOWN;
+                $message = "接口返回错误：" . var_export($res, true);
+            }else if (array_key_exists('error', $res)) {
                 $error   = match ($res['error']["code"]) {
                     "-32600", "-32602" => self::ERROR_BAD_REQUEST,
                     "-32601"           => self::ERROR_NOT_FOUND,
@@ -56,19 +59,19 @@ class NodeApi implements ProxyApi {
             $res     = [];
             $error   = self::ERROR_UNKNOWN;
             $message = "网络请求失败";
-        }catch (RequestException $e){
-            $res     = [];
-            $error   = self::ERROR_RATE_LIMITED;
+        } catch (RequestException $e) {
+            $res   = [];
+            $error = self::ERROR_RATE_LIMITED;
             if ($e->hasResponse()) {
                 $message = "网络请求失败: http-code:【{$e->getResponse()->getStatusCode()}】，" . $e->getMessage();
-            }else{
+            } else {
                 $message = "网络请求失败: " . $e->getMessage();
             }
         }
         if (isset($error) && is_callable($this->errorHandler)) {
             call_user_func_array($this->errorHandler, [$error, $message ?? '']);
         }
-        if (array_key_exists('result', $res)) {
+        if (is_array($res) && array_key_exists('result', $res)) {
             return $res['result'];
         } else {
             return false;
