@@ -10,7 +10,7 @@ class EtherscanApi implements ProxyApi {
     protected $options;
     protected $errorHandler = null;
     
-    function __construct(string $apiKey, $chainId=1, array $options = []) {
+    function __construct(string $apiKey, $chainId = 1, array $options = []) {
         $this->apiKey  = $apiKey;
         $this->chainId = $chainId;
         $this->options = $options;
@@ -35,10 +35,10 @@ class EtherscanApi implements ProxyApi {
         }
         try {
             $res = Utils::httpRequest('GET', $url, $this->options);
-            if (!is_array($res)){
-                $error = self::ERROR_UNKNOWN;
+            if (!is_array($res)) {
+                $error   = self::ERROR_UNKNOWN;
                 $message = "接口返回错误：" . var_export($res, true);
-            }else if (array_key_exists('status', $res) && $res['status'] == '0') {
+            } else if (array_key_exists('status', $res) && $res['status'] == '0') {
                 if (is_string($res['result'])) {
                     if (str_contains($res['result'], 'rate')) {
                         $error = self::ERROR_RATE_LIMITED;
@@ -46,21 +46,31 @@ class EtherscanApi implements ProxyApi {
                         $error = self::ERROR_UNKNOWN;
                     }
                     $message = $res['result'];
+                }else{
+                    $error = self::ERROR_UNKNOWN;
+                    $message = var_export($res, true);
                 }
-            } elseif (array_key_exists('error', $res)) {
-                $error   = match ($res['error']["code"]) {
-                    "-32600", "-32602" => self::ERROR_BAD_REQUEST,
-                    "-32601"           => self::ERROR_NOT_FOUND,
-                    "-32005"           => self::ERROR_RATE_LIMITED,
-                    default            => self::ERROR_UNKNOWN,
-                };
+            } elseif (array_key_exists('error', $res) && !empty($res['error'])) {
+                $res_str = var_export($res, true);
                 $message = <<<TEXT
-                    URL: {$url}
-                    RESPONSE: {$res["error"]["message"]}
-                    TEXT;
+                        URL: {$url}
+                        RESPONSE: {$res_str}
+                        TEXT;
+                if (is_string($res['error'])) {
+                    $error = self::ERROR_UNKNOWN;
+                } else if (isset($res['error']['code'])) {
+                    $error   = match ($res['error']["code"]) {
+                        "-32600", "-32602" => self::ERROR_BAD_REQUEST,
+                        "-32601"           => self::ERROR_NOT_FOUND,
+                        "-32005"           => self::ERROR_RATE_LIMITED,
+                        default            => self::ERROR_UNKNOWN,
+                    };
+                }else{
+                    $error = self::ERROR_UNKNOWN;
+                }
             }
         } catch (ConnectException $e) {
-            $res = [];
+            $res     = [];
             $error   = self::ERROR_UNKNOWN;
             $message = "网络请求失败";
         }
