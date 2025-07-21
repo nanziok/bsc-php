@@ -46,28 +46,31 @@ class EtherscanApi implements ProxyApi {
                         $error = self::ERROR_UNKNOWN;
                     }
                     $message = $res['result'];
-                }else{
-                    $error = self::ERROR_UNKNOWN;
+                } else {
+                    $error   = self::ERROR_UNKNOWN;
                     $message = var_export($res, true);
                 }
             } elseif (array_key_exists('error', $res) && !empty($res['error'])) {
                 $res_str = var_export($res, true);
                 $message = <<<TEXT
-                        URL: {$url}
-                        RESPONSE: {$res_str}
-                        TEXT;
+                    URL: {$url}
+                    RESPONSE: {$res_str}
+                    TEXT;
                 if (is_string($res['error'])) {
                     $error = self::ERROR_UNKNOWN;
                 } else if (isset($res['error']['code'])) {
-                    $error   = match ($res['error']["code"]) {
+                    $error = match ($res['error']["code"]) {
                         "-32600", "-32602" => self::ERROR_BAD_REQUEST,
                         "-32601"           => self::ERROR_NOT_FOUND,
                         "-32005"           => self::ERROR_RATE_LIMITED,
                         default            => self::ERROR_UNKNOWN,
                     };
-                }else{
+                } else {
                     $error = self::ERROR_UNKNOWN;
                 }
+            } elseif (!array_key_exists('result', $res)) {
+                $message = "返回错误：" . var_export($res, true);
+                $error   = self::ERROR_UNKNOWN;
             }
         } catch (ConnectException $e) {
             $res     = [];
@@ -78,11 +81,7 @@ class EtherscanApi implements ProxyApi {
         if (isset($error) && is_callable($this->errorHandler)) {
             call_user_func_array($this->errorHandler, [$error, $message ?? '']);
         }
-        if (is_array($res) && array_key_exists('result', $res)) {
-            return $res['result'];
-        } else {
-            return false;
-        }
+        return $res['result'];
     }
     
     function gasPrice() {
