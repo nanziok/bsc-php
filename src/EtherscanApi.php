@@ -81,7 +81,7 @@ class EtherscanApi implements ProxyApi {
         if (isset($error) && is_callable($this->errorHandler)) {
             call_user_func_array($this->errorHandler, [$error, $message ?? '']);
         }
-        return $res['result'];
+        return $res['result'] ?? false;
     }
     
     function gasPrice() {
