@@ -51,9 +51,9 @@ class NodeApi implements ProxyApi {
                     BODY: {$this->options["body"]}
                     RESPONSE: {$res["error"]["message"]}
                     TEXT;
-            }
-            if (isset($error) && is_callable($this->errorHandler)) {
-                call_user_func_array($this->errorHandler, [$error, $message ?? '']);
+            }else if (empty($res['result'])) {
+                $error = self::ERROR_UNKNOWN;
+                $message = "接口返回错误：" . var_export($res, true);
             }
         } catch (ConnectException $e) {
             $res     = [];
