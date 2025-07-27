@@ -36,26 +36,21 @@ class EtherscanApi implements ProxyApi {
         try {
             $res = Utils::httpRequest('GET', $url, $this->options);
             if (!is_array($res)) {
+                $message = "{$url} 返回错误：" . var_export($res, true);
                 $error   = self::ERROR_UNKNOWN;
-                $message = "接口返回错误：" . var_export($res, true);
             } else if (array_key_exists('status', $res) && $res['status'] == '0') {
+                $message = "{$url} 返回错误：" . var_export($res, true);
                 if (is_string($res['result'])) {
                     if (str_contains($res['result'], 'rate')) {
                         $error = self::ERROR_RATE_LIMITED;
                     } else {
                         $error = self::ERROR_UNKNOWN;
                     }
-                    $message = $res['result'];
                 } else {
                     $error   = self::ERROR_UNKNOWN;
-                    $message = var_export($res, true);
                 }
             } elseif (array_key_exists('error', $res) && !empty($res['error'])) {
-                $res_str = var_export($res, true);
-                $message = <<<TEXT
-                    URL: {$url}
-                    RESPONSE: {$res_str}
-                    TEXT;
+                $message = "{$url} 返回错误：" . var_export($res, true);
                 if (is_string($res['error'])) {
                     $error = self::ERROR_UNKNOWN;
                 } else if (isset($res['error']['code'])) {
@@ -69,7 +64,7 @@ class EtherscanApi implements ProxyApi {
                     $error = self::ERROR_UNKNOWN;
                 }
             } elseif (!array_key_exists('result', $res)) {
-                $message = "返回错误：" . var_export($res, true);
+                $message = "{$url} 返回错误：" . var_export($res, true);
                 $error   = self::ERROR_UNKNOWN;
             }
         } catch (ConnectException $e) {
@@ -78,8 +73,11 @@ class EtherscanApi implements ProxyApi {
             $message = "网络请求失败";
         }
         
-        if (isset($error) && is_callable($this->errorHandler)) {
-            call_user_func_array($this->errorHandler, [$error, $message ?? '']);
+        if (isset($error) && isset($message)) {
+            if (is_callable($this->errorHandler)) {
+                call_user_func_array($this->errorHandler, [$error, $message]);
+            }
+            error_log($message);
         }
         return $res['result'] ?? false;
     }

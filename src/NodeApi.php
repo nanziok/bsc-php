@@ -36,24 +36,32 @@ class NodeApi implements ProxyApi {
         $this->options["headers"]["Content-Type"] = "application/json";
         try {
             $res = Utils::httpRequest('POST', $this->gateway, $this->options);
-            if (!is_array($res)){
-                $error = self::ERROR_UNKNOWN;
-                $message = "接口返回错误：" . var_export($res, true);
-            }else if (array_key_exists('error', $res)) {
+            if (!is_array($res)) {
+                $error   = self::ERROR_UNKNOWN;
+                $message = json_encode([
+                    "url"      => $this->gateway,
+                    "body"     => $data_string,
+                    "response" => $res,
+                ]);
+            } else if (array_key_exists('error', $res)) {
                 $error   = match ($res['error']["code"]) {
                     "-32600", "-32602" => self::ERROR_BAD_REQUEST,
                     "-32601"           => self::ERROR_NOT_FOUND,
                     "-32005"           => self::ERROR_RATE_LIMITED,
                     default            => self::ERROR_UNKNOWN,
                 };
-                $message = <<<TEXT
-                    URL: {$this->gateway}
-                    BODY: {$this->options["body"]}
-                    RESPONSE: {$res["error"]["message"]}
-                    TEXT;
-            }else if (empty($res['result'])) {
-                $error = self::ERROR_UNKNOWN;
-                $message = "接口返回错误：" . var_export($res, true);
+                $message = json_encode([
+                    "url"      => $this->gateway,
+                    "body"     => $data_string,
+                    "response" => $res,
+                ]);
+            } else if (empty($res['result'])) {
+                $error   = self::ERROR_UNKNOWN;
+                $message = json_encode([
+                    "url"      => $this->gateway,
+                    "body"     => $data_string,
+                    "response" => $res,
+                ]);
             }
         } catch (ConnectException $e) {
             $res     = [];
@@ -68,14 +76,13 @@ class NodeApi implements ProxyApi {
                 $message = "网络请求失败: " . $e->getMessage();
             }
         }
-        if (isset($error) && is_callable($this->errorHandler)) {
-            call_user_func_array($this->errorHandler, [$error, $message ?? '']);
+        if (isset($error) && isset($message)) {
+            if (is_callable($this->errorHandler)) {
+                call_user_func_array($this->errorHandler, [$error, $message]);
+            }
+            error_log($message);
         }
-        if (is_array($res) && array_key_exists('result', $res)) {
-            return $res['result'];
-        } else {
-            return false;
-        }
+        return $res['result'] ?? false;
     }
     
     function gasPrice() {
