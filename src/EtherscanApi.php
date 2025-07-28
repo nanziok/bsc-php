@@ -79,7 +79,7 @@ class EtherscanApi implements ProxyApi {
             }
             error_log($message);
         }
-        return $res['result'] ?? false;
+        return array_key_exists('result', $res) ? $res['result'] : false;
     }
     
     function gasPrice() {

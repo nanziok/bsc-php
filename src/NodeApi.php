@@ -55,7 +55,7 @@ class NodeApi implements ProxyApi {
                     "body"     => $data_string,
                     "response" => $res,
                 ]);
-            } else if (empty($res['result'])) {
+            } else if (!array_key_exists('result',$res)) {
                 $error   = self::ERROR_UNKNOWN;
                 $message = json_encode([
                     "url"      => $this->gateway,
@@ -82,7 +82,7 @@ class NodeApi implements ProxyApi {
             }
             error_log($message);
         }
-        return $res['result'] ?? false;
+        return array_key_exists('result', $res) ? $res['result'] : false;
     }
     
     function gasPrice() {
