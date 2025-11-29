@@ -19,7 +19,7 @@ class NodeApi implements ProxyApi {
         $this->gateway = $gateway;
         $this->network = $network;
         $this->options = array_merge([
-            "http_errors" => false,
+            "http_errors" => true,
         ], $options);
     }
     
@@ -37,6 +37,7 @@ class NodeApi implements ProxyApi {
         try {
             $res = Utils::httpRequest('POST', $this->gateway, $this->options);
             if (!is_array($res)) {
+                $res     = [];
                 $error   = self::ERROR_UNKNOWN;
                 $message = json_encode([
                     "url"      => $this->gateway,
@@ -55,7 +56,7 @@ class NodeApi implements ProxyApi {
                     "body"     => $data_string,
                     "response" => $res,
                 ]);
-            } else if (!array_key_exists('result',$res)) {
+            } else if (!array_key_exists('result', $res)) {
                 $error   = self::ERROR_UNKNOWN;
                 $message = json_encode([
                     "url"      => $this->gateway,

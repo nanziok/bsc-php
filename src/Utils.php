@@ -489,7 +489,7 @@ class Utils
      * @param string $method
      * @param string $url
      * @param array $options
-     * @return mixed|StreamInterface
+     * @return null|array
      * @throws GuzzleException
      */
     public static function httpRequest(string $method, string $url, array $options = [])
